@@ -1,0 +1,17 @@
+<svg width="180" height="180" viewBox="0 0 180 180" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="180" height="180" rx="36" fill="#0d1117"/>
+  <rect width="180" height="180" rx="36" fill="url(#bg)"/>
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="180" y2="180" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#161b22"/>
+      <stop offset="100%" stop-color="#0d1117"/>
+    </linearGradient>
+  </defs>
+  <!-- G letter -->
+  <text x="28" y="128" font-family="Arial Black, Arial, sans-serif" font-weight="900" font-size="96" fill="#1AAF54">G</text>
+  <!-- X7 small -->
+  <text x="108" y="106" font-family="Arial Black, Arial, sans-serif" font-weight="900" font-size="44" fill="#1AAF54">X</text>
+  <text x="138" y="148" font-family="Arial Black, Arial, sans-serif" font-weight="900" font-size="36" fill="#ffffff" opacity="0.85">7</text>
+  <!-- green accent bar bottom -->
+  <rect x="24" y="152" width="132" height="6" rx="3" fill="#1AAF54" opacity="0.5"/>
+</svg>
