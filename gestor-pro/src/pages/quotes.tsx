@@ -34,7 +34,16 @@ type QuoteForm = z.infer<typeof quoteSchema>;
 type QuoteItem = { inventoryId: number; name: string; quantity: number; unitPrice: number; total: number };
 type InventoryItem = { id: number; name: string; quantity: number; price: number };
 type Employee = { id: number; name: string; role: string; commissionRate: number };
-type Quote = { id: number; clientId?: number | null; clientName?: string | null; employeeId?: number | null; sellerName?: string | null; commissionPct?: number; commissionAmount?: number; description: string; subtotal?: number | null; discount?: number | null; amount: number; status: "pending" | "converted" | "rejected"; additionalNotes?: string | null; createdAt: string; };
+type Quote = { id: number; clientId?: number | null; clientName?: string | null; employeeId?: number | null; sellerName?: string | null; commissionPct?: number; commissionAmount?: number; description: string; subtotal?: number | null; discount?: number | null; amount: number; status: "pending" | "converted" | "rejected"; paymentType?: string | null; paymentTypeLabel?: string | null; additionalNotes?: string | null; createdAt: string; };
+
+const PAYMENT_OPTIONS = [
+  { value: "avista", label: "À Vista (Dinheiro)" },
+  { value: "pix", label: "PIX" },
+  { value: "cartao_credito", label: "Cartão de Crédito" },
+  { value: "cartao_debito", label: "Cartão de Débito" },
+  { value: "boleto", label: "Boleto" },
+  { value: "aprazo", label: "A Prazo (Fiado)" },
+];
 type FullClient = { id: number; name: string; fantasia?: string | null; phone?: string | null; email?: string | null; cnpj?: string | null; logradouro?: string | null; numero?: string | null; bairro?: string | null; cidade?: string | null; cep?: string | null; personType?: string };
 type FilterQ = "all" | "pending" | "converted" | "rejected";
 
@@ -430,6 +439,7 @@ export default function Quotes() {
   const [commissionPct, setCommissionPct] = useState<number | null>(null);
   // Convert dialog
   const [convertDialogQuote, setConvertDialogQuote] = useState<Quote | null>(null);
+  const [convertPaymentType, setConvertPaymentType] = useState("avista");
   const [convertDebtorEnabled, setConvertDebtorEnabled] = useState(false);
   const [convertDebtorAmount, setConvertDebtorAmount] = useState("");
   const [convertDebtorDate, setConvertDebtorDate] = useState("");
@@ -561,6 +571,7 @@ export default function Quotes() {
 
   const handleConvert = (quote: Quote) => {
     setConvertDialogQuote(quote);
+    setConvertPaymentType("avista");
     setConvertDebtorEnabled(false);
     setConvertDebtorAmount(String(quote.amount.toFixed(2)));
     setConvertDebtorDate("");
@@ -568,7 +579,7 @@ export default function Quotes() {
 
   const confirmConvert = async () => {
     if (!convertDialogQuote) return;
-    convertQuote.mutate({ id: convertDialogQuote.id }, {
+    convertQuote.mutate({ id: convertDialogQuote.id, data: { paymentType: convertPaymentType } } as any, {
       onSuccess: async () => {
         if (convertDebtorEnabled && convertDialogQuote.clientId) {
           const amt = parseFloat(convertDebtorAmount.replace(",", "."));
@@ -679,11 +690,16 @@ export default function Quotes() {
                       {statusLabel[quote.status]}
                     </span>
                   </div>
-                  <div className="flex items-center gap-3 mt-1">
+                  <div className="flex items-center gap-3 mt-1 flex-wrap">
                     <p className="text-base font-bold">{formatCurrency(quote.amount)}</p>
                     {quote.commissionPct != null && quote.commissionPct > 0 && (
                       <span className="text-xs text-primary font-semibold bg-primary/10 px-2 py-0.5 rounded-full">
                         Comissão {quote.commissionPct}% · {formatCurrency(quote.commissionAmount ?? 0)}
+                      </span>
+                    )}
+                    {quote.status === "converted" && quote.paymentTypeLabel && (
+                      <span className="text-xs font-semibold bg-green-100 text-green-700 px-2 py-0.5 rounded-full">
+                        {quote.paymentTypeLabel}
                       </span>
                     )}
                   </div>
@@ -936,6 +952,33 @@ export default function Quotes() {
           </DialogHeader>
 
           <div className="space-y-4">
+            {/* Forma de pagamento */}
+            <div>
+              <label className="text-sm font-medium mb-2 block">Forma de Pagamento</label>
+              <div className="grid grid-cols-2 gap-2">
+                {PAYMENT_OPTIONS.map((opt) => (
+                  <button
+                    key={opt.value}
+                    type="button"
+                    onClick={() => {
+                      setConvertPaymentType(opt.value);
+                      if (opt.value !== "aprazo") setConvertDebtorEnabled(false);
+                    }}
+                    className={`px-3 py-2 rounded-lg border text-sm font-medium transition-all text-left ${
+                      convertPaymentType === opt.value
+                        ? "bg-primary text-white border-primary shadow-sm"
+                        : "bg-card text-muted-foreground border-border hover:border-primary/50 hover:text-foreground"
+                    }`}
+                  >
+                    {opt.label}
+                  </button>
+                ))}
+              </div>
+              {convertPaymentType !== "aprazo" && (
+                <p className="text-xs text-primary mt-2 font-medium">Comissão do vendedor será liberada automaticamente.</p>
+              )}
+            </div>
+
             {/* Opção devedor — só exibe se o orçamento tem cliente cadastrado */}
             {convertDialogQuote?.clientId ? (
               <div className="border rounded-xl overflow-hidden">
