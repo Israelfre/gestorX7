@@ -115,7 +115,7 @@ router.get("/commissions/summary", async (req, res) => {
         };
       });
 
-      // Comissões de orçamentos convertidos (não têm commissionPaid ainda — tratado como pendente)
+      // Comissões de orçamentos convertidos
       let quotesCommission = 0;
       const quotesDetail = convertedQuotes
         .filter((q) => Number(q.commissionAmount ?? 0) > 0)
@@ -125,14 +125,20 @@ router.get("/commissions/summary", async (req, res) => {
           accumulatedComm += comm;
           grossCommission += comm;
           quotesCommission += comm;
-          blockedCommission += comm; // orçamentos sempre bloqueados (A Prazo por natureza)
+          // Se o pagamento foi à vista (qualquer forma exceto a prazo) → comissão liberada
+          const qt = q.paymentType ?? "avista";
+          if (qt === "aprazo") {
+            blockedCommission += comm;
+          } else {
+            releasedCommission += comm; // pago na hora → comissão liberada
+          }
           totalSalesAmount += Number(q.amount ?? 0);
           return {
             id: q.id, createdAt: q.createdAt, total: Number(q.amount ?? 0),
             commissionPct: Number(q.commissionPct ?? 0), commissionAmount: comm,
             commissionPaid: false, commissionPaidAt: null,
             clientName: q.clientName ?? null,
-            paymentType: "aprazo" as const,
+            paymentType: qt,
             source: "orcamento" as const,
             items: [],
           };
