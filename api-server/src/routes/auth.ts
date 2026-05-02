@@ -67,9 +67,13 @@ router.post("/auth/login", async (req, res) => {
 // POST /api/auth/register — cadastro de novo cliente (após pagamento Stripe)
 router.post("/auth/register", async (req, res) => {
   try {
-    const { name, email, password, stripeSessionId, planFallback } = req.body;
-    if (!name || !email || !password) {
-      res.status(400).json({ error: "Nome, e-mail e senha são obrigatórios" });
+    // ALTERAÇÃO: desestruturação inclui agora 'phone' (telefone) e renomeação de 'name' passa
+    // a ser explicitamente o nome completo do cliente
+    const { name, phone, email, password, stripeSessionId, planFallback } = req.body;
+
+    // ALTERAÇÃO: validação atualizada para exigir nome completo e telefone
+    if (!name || !phone || !email || !password) {
+      res.status(400).json({ error: "Nome completo, telefone, e-mail e senha são obrigatórios" });
       return;
     }
     if (password.length < 6) {
@@ -132,6 +136,8 @@ router.post("/auth/register", async (req, res) => {
       .values({
         tenantId: tenant.id,
         name: name.trim(),
+        // ADICIONADO: salva o telefone do cliente no banco de dados
+        phone: phone.trim(),
         email: emailNorm,
         passwordHash,
         role: "client",
