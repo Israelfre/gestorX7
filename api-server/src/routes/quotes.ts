@@ -31,6 +31,15 @@ const updateQuoteBodySchema = z.object({
   additionalNotes: z.string().optional().nullable(),
 });
 
+const paymentTypeLabels: Record<string, string> = {
+  avista: "À Vista",
+  pix: "PIX",
+  cartao_credito: "Cartão de Crédito",
+  cartao_debito: "Cartão de Débito",
+  boleto: "Boleto",
+  aprazo: "A Prazo",
+};
+
 function quoteWithMeta(q: typeof quotesTable.$inferSelect, allClientMap: Record<number, string>) {
   const commissionPct = Number(q.commissionPct ?? 0);
   const amount = Number(q.amount);
@@ -42,6 +51,8 @@ function quoteWithMeta(q: typeof quotesTable.$inferSelect, allClientMap: Record<
     commissionPct,
     commissionAmount: commissionPct > 0 ? parseFloat(((amount * commissionPct) / 100).toFixed(2)) : 0,
     clientName: q.clientId ? allClientMap[q.clientId] ?? null : null,
+    paymentType: q.paymentType ?? null,
+    paymentTypeLabel: q.paymentType ? (paymentTypeLabels[q.paymentType] ?? q.paymentType) : null,
     createdAt: q.createdAt.toISOString(),
   };
 }
@@ -125,11 +136,13 @@ router.delete("/quotes/:id", async (req, res) => {
 router.post("/quotes/:id/convert", async (req, res) => {
   const id = Number(req.params.id);
   const tid = getTenantId(req);
+  const paymentType: string = req.body?.paymentType ?? "avista";
+
   const [quote] = await db.select().from(quotesTable).where(and(eq(quotesTable.id, id), eq(quotesTable.tenantId, tid)));
   if (!quote) { res.status(404).json({ error: "Quote not found" }); return; }
   if (quote.status !== "pending") { res.status(400).json({ error: "Quote is not pending" }); return; }
 
-  await db.update(quotesTable).set({ status: "converted" }).where(eq(quotesTable.id, id));
+  await db.update(quotesTable).set({ status: "converted", paymentType }).where(eq(quotesTable.id, id));
 
   const [transaction] = await db.insert(transactionsTable).values({
     tenantId: tid,
