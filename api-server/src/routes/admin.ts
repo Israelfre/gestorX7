@@ -18,6 +18,7 @@ function formatUser(u: typeof usersTable.$inferSelect) {
     tenantId: u.tenantId,
     name: u.name,
     email: u.email,
+    phone: u.phone ?? null,
     passwordPlain: u.passwordPlain ?? null,
     role: u.role,
     plan: u.plan,
@@ -67,7 +68,7 @@ router.get("/users/:id", async (req, res) => {
 // Create client user + tenant
 router.post("/users", async (req, res) => {
   try {
-    const { name, email, password, plan, planExpiresAt, isActive } = req.body;
+    const { name, email, phone, password, plan, planExpiresAt, isActive } = req.body;
     if (!name || !email || !password) {
       res.status(400).json({ error: "Nome, e-mail e senha são obrigatórios" });
       return;
@@ -87,6 +88,7 @@ router.post("/users", async (req, res) => {
       tenantId: tenant.id,
       name,
       email: email.toLowerCase().trim(),
+      phone: phone ?? null,
       passwordHash: hash,
       passwordPlain: password,
       role: "client",
@@ -106,11 +108,12 @@ router.post("/users", async (req, res) => {
 router.put("/users/:id", async (req, res) => {
   try {
     const id = parseInt(req.params.id);
-    const { name, email, password, plan, planExpiresAt, isActive } = req.body;
+    const { name, email, phone, password, plan, planExpiresAt, isActive } = req.body;
 
     const updates: Partial<typeof usersTable.$inferInsert> = {};
     if (name) updates.name = name;
     if (email) updates.email = email.toLowerCase().trim();
+    if (phone !== undefined) updates.phone = phone || null;
     if (plan) updates.plan = plan;
     if (planExpiresAt !== undefined) updates.planExpiresAt = planExpiresAt ? new Date(planExpiresAt) : null;
     if (isActive !== undefined) updates.isActive = isActive;
