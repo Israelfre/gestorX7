@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   Users, Plus, Edit2, Trash2, CheckCircle, XCircle, Clock, AlertTriangle,
-  Eye, EyeOff, LogOut, Copy, KeyRound,
+  Eye, EyeOff, LogOut, Copy, KeyRound, Phone,
 } from "lucide-react";
 import { useAuth, getAuthToken } from "@/contexts/AuthContext";
 
@@ -22,6 +22,7 @@ type AdminUser = {
   tenantId: number;
   name: string;
   email: string;
+  phone: string | null;
   passwordPlain: string | null;
   role: string;
   plan: string;
@@ -66,13 +67,14 @@ function StatusBadge({ status }: { status: string }) {
 type FormState = {
   name: string;
   email: string;
+  phone: string;
   password: string;
   plan: string;
   planExpiresAt: string;
   isActive: boolean;
 };
 
-const emptyForm: FormState = { name: "", email: "", password: "", plan: "trial", planExpiresAt: "", isActive: true };
+const emptyForm: FormState = { name: "", email: "", phone: "", password: "", plan: "trial", planExpiresAt: "", isActive: true };
 
 export default function AdminPanel() {
   const { user: me, logout } = useAuth();
@@ -171,7 +173,7 @@ export default function AdminPanel() {
 
   function openEdit(u: AdminUser) {
     setEditingId(u.id);
-    setForm({ name: u.name, email: u.email, password: "", plan: u.plan, planExpiresAt: u.planExpiresAt ? u.planExpiresAt.split("T")[0] : "", isActive: u.isActive });
+    setForm({ name: u.name, email: u.email, phone: u.phone ?? "", password: "", plan: u.plan, planExpiresAt: u.planExpiresAt ? u.planExpiresAt.split("T")[0] : "", isActive: u.isActive });
     setFormError(null);
     setShowForm(true);
   }
@@ -260,6 +262,10 @@ export default function AdminPanel() {
                 <input type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} required placeholder="acesso@email.com" className="w-full bg-[#0d1117] border border-[#30363d] rounded-xl px-3 py-2 text-sm text-white placeholder:text-gray-600 focus:outline-none focus:border-[#1AAF54] transition-colors" />
               </div>
               <div>
+                <label className="text-xs text-gray-400 block mb-1.5">Telefone</label>
+                <input type="tel" value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} placeholder="(11) 99999-9999" className="w-full bg-[#0d1117] border border-[#30363d] rounded-xl px-3 py-2 text-sm text-white placeholder:text-gray-600 focus:outline-none focus:border-[#1AAF54] transition-colors" />
+              </div>
+              <div>
                 <label className="text-xs text-gray-400 block mb-1.5">{editingId ? "Nova Senha (deixar em branco para manter)" : "Senha"}</label>
                 <div className="relative">
                   <input type={showPass ? "text" : "password"} value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} required={!editingId} placeholder="••••••••" className="w-full bg-[#0d1117] border border-[#30363d] rounded-xl px-3 py-2 pr-9 text-sm text-white placeholder:text-gray-600 focus:outline-none focus:border-[#1AAF54] transition-colors" />
@@ -334,6 +340,12 @@ export default function AdminPanel() {
                       <StatusBadge status={u.status} />
                     </div>
                     <p className="text-xs text-gray-400 mt-0.5">{u.email}</p>
+                    {u.phone && (
+                      <p className="text-xs text-gray-400 flex items-center gap-1 mt-0.5">
+                        <Phone className="w-3 h-3 shrink-0" />
+                        {u.phone}
+                      </p>
+                    )}
 
                     {/* Password row */}
                     <div className="flex items-center gap-1.5 mt-1">
